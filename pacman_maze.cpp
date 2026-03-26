@@ -8,6 +8,14 @@ using namespace std;
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 GLuint yujiTexture;
+GLuint jogoTexture;
+GLuint mahitoTexture;
+GLuint hanamiTexture;
+
+// postion of the ghosts
+int jogoRow = 8, jogoCol = 9;
+int mahitoRow = 8, mahitoCol = 10;
+int hanamiRow = 8, hanamiCol = 11;
 
 const int TILE_SIZE = 30;
 
@@ -34,20 +42,20 @@ const int ROWS = maze.size();
 const int COLS = maze[0].size();
 const int WINDOW_WIDTH = COLS * TILE_SIZE;
 const int WINDOW_HEIGHT = ROWS * TILE_SIZE;
-
-void loadTexture(const char *filename) {
+GLuint loadTexture(const char *filename) {
   int width, height, channels;
+  GLuint texture;
 
   stbi_set_flip_vertically_on_load(true);
   unsigned char *data = stbi_load(filename, &width, &height, &channels, 4);
 
   if (!data) {
-    std::cout << "Failed to load image\n";
+    std::cout << "Failed to load image: " << filename << std::endl;
     exit(1);
   }
 
-  glGenTextures(1, &yujiTexture);
-  glBindTexture(GL_TEXTURE_2D, yujiTexture);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                GL_UNSIGNED_BYTE, data);
@@ -56,25 +64,23 @@ void loadTexture(const char *filename) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
   stbi_image_free(data);
+  return texture;
 }
-// ----------------------------
-// Draw Yuji sprite
-// ----------------------------
-void drawPlayer() {
+
+// Draw sprites
+void drawSprite(GLuint texture, int row, int col, float spriteSize) {
   glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, yujiTexture);
+  glBindTexture(GL_TEXTURE_2D, texture);
 
   glColor3f(1.0f, 1.0f, 1.0f);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  float tileX = playerCol * TILE_SIZE;
-  float tileY = (WINDOW_HEIGHT - (playerRow + 1) * TILE_SIZE);
+  float tileX = col * TILE_SIZE;
+  float tileY = WINDOW_HEIGHT - (row + 1) * TILE_SIZE;
 
-  float spriteSize = 34.0f;
   float offset = (TILE_SIZE - spriteSize) / 2.0f;
-
   float x = tileX + offset;
   float y = tileY + offset;
 
@@ -91,6 +97,17 @@ void drawPlayer() {
 
   glDisable(GL_TEXTURE_2D);
 }
+
+// Draw Yuji sprite
+void drawPlayer() { drawSprite(yujiTexture, playerRow, playerCol, 28.0f); }
+
+// drawing ghosts
+void drawGhosts() {
+  drawSprite(jogoTexture, jogoRow, jogoCol, 28.0f);
+  drawSprite(mahitoTexture, mahitoRow, mahitoCol, 28.0f);
+  drawSprite(hanamiTexture, hanamiRow, hanamiCol, 28.0f);
+}
+
 void drawFilledRect(float x, float y, float w, float h) {
   glBegin(GL_QUADS);
   glVertex2f(x, y);
@@ -134,11 +151,11 @@ void drawMaze() {
       // drawFilledCircle(x + TILE_SIZE / 2.0f, y + TILE_SIZE / 2.0f,
       // TILE_SIZE / 2.5f);
       // }
-      else if (tile == 'G') {
-        glColor3f(1.0f, 0.0f, 0.0f); // ghost start
-        drawFilledCircle(x + TILE_SIZE / 2.0f, y + TILE_SIZE / 2.0f,
-                         TILE_SIZE / 2.8f);
-      }
+      // else if (tile == 'G') {
+      //   glColor3f(1.0f, 0.0f, 0.0f); // ghost start
+      //   drawFilledCircle(x + TILE_SIZE / 2.0f, y + TILE_SIZE / 2.0f,
+      //                    TILE_SIZE / 2.8f);
+      // }
     }
   }
 }
@@ -192,6 +209,7 @@ void display() {
   drawFilledRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
   drawMaze();
+  drawGhosts();
   drawPlayer();
 
   glutSwapBuffers();
@@ -205,9 +223,12 @@ void init() {
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  loadTexture("yuji.png");
-}
 
+  yujiTexture = loadTexture("yuji.png");
+  jogoTexture = loadTexture("jogo.png");
+  mahitoTexture = loadTexture("mahito.png");
+  hanamiTexture = loadTexture("hanami.png");
+}
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
