@@ -167,8 +167,14 @@ void handleSpecialKeys(int key, int x, int y) {
     playerRow = newRow;
     playerCol = newCol;
   }
+  char &tile = maze[playerRow][playerCol];
+
+  if (tile == '.') {
+    tile = ' '; // remove pellet
+  }
 
   glutPostRedisplay();
+  
 }
 
 void display() {
