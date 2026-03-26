@@ -14,13 +14,16 @@ GLuint jogoTexture;
 GLuint mahitoTexture;
 GLuint hanamiTexture;
 
-// postion of the ghosts
-int jogoRow = 8, jogoCol = 9;
-int mahitoRow = 8, mahitoCol = 10;
-int hanamiRow = 8, hanamiCol = 11;
+struct Ghost {
+  int row, col;
+  int dir;
+  GLuint texture;
+};
 
-// directions of the ghosts
-int jogoDir = 0;
+// postion of the ghosts
+Ghost jogo;
+Ghost mahito;
+Ghost hanami;
 
 const int TILE_SIZE = 30;
 
@@ -108,9 +111,9 @@ void drawPlayer() { drawSprite(yujiTexture, playerRow, playerCol, 28.0f); }
 
 // drawing ghosts
 void drawGhosts() {
-  drawSprite(jogoTexture, jogoRow, jogoCol, 28.0f);
-  drawSprite(mahitoTexture, mahitoRow, mahitoCol, 28.0f);
-  drawSprite(hanamiTexture, hanamiRow, hanamiCol, 28.0f);
+  drawSprite(jogo.texture, jogo.row, jogo.col, 28.0f);
+  drawSprite(mahito.texture, mahito.row, mahito.col, 28.0f);
+  drawSprite(hanami.texture, hanami.row, hanami.col, 28.0f);
 }
 
 void drawFilledRect(float x, float y, float w, float h) {
@@ -202,14 +205,12 @@ bool canMoveInDir(int row, int col, int dir) {
   getNextTile(row, col, dir, newRow, newCol);
   return isWalkable(newRow, newCol);
 }
-
-void moveJogo() {
+void moveGhost(Ghost &ghost) {
   int newRow, newCol;
 
-  // Get all valid directions
   std::vector<int> validDirs;
   for (int dir = 0; dir < 4; dir++) {
-    if (canMoveInDir(jogoRow, jogoCol, dir)) {
+    if (canMoveInDir(ghost.row, ghost.col, dir)) {
       validDirs.push_back(dir);
     }
   }
@@ -217,9 +218,8 @@ void moveJogo() {
   if (validDirs.empty())
     return;
 
-  int reverse = oppositeDir(jogoDir);
+  int reverse = oppositeDir(ghost.dir);
 
-  // Remove reverse unless it's the only option
   std::vector<int> nonReverseDirs;
   for (int dir : validDirs) {
     if (dir != reverse) {
@@ -227,44 +227,41 @@ void moveJogo() {
     }
   }
 
-  // If stuck, must reverse
   if (nonReverseDirs.empty()) {
-    jogoDir = reverse;
+    ghost.dir = reverse;
   } else {
-    // Check if intersection (more than 1 non-reverse option)
     if (nonReverseDirs.size() > 1) {
-      //  70% continue forward if possible
-      bool canContinue = canMoveInDir(jogoRow, jogoCol, jogoDir);
+      bool canContinue = canMoveInDir(ghost.row, ghost.col, ghost.dir);
 
       if (canContinue && rand() % 100 < 70) {
-        // keep going
+        // keep current direction
       } else {
-        // choose new direction
-        jogoDir = nonReverseDirs[rand() % nonReverseDirs.size()];
+        ghost.dir = nonReverseDirs[rand() % nonReverseDirs.size()];
       }
     } else {
-      // only one way → go that way
-      jogoDir = nonReverseDirs[0];
+      ghost.dir = nonReverseDirs[0];
     }
   }
 
-  // Move
-  getNextTile(jogoRow, jogoCol, jogoDir, newRow, newCol);
-  jogoRow = newRow;
-  jogoCol = newCol;
+  getNextTile(ghost.row, ghost.col, ghost.dir, newRow, newCol);
+  ghost.row = newRow;
+  ghost.col = newCol;
 }
-void checkGhostCollision() {
-  if (playerRow == jogoRow && playerCol == jogoCol) {
-    std::cout << "Jogo caught Yuji!" << std::endl;
+void checkGhostCollision(const Ghost &ghost) {
+  if (playerRow == ghost.row && playerCol == ghost.col) {
+    std::cout << "Yuji was caught!" << std::endl;
   }
 }
-
 void ghostTimer(int value) {
-  moveJogo();
-  checkGhostCollision();
+  moveGhost(jogo);
+  moveGhost(mahito);
+  moveGhost(hanami);
+
+  checkGhostCollision(jogo);
+  checkGhostCollision(mahito);
+  checkGhostCollision(hanami);
 
   glutPostRedisplay();
-
   glutTimerFunc(250, ghostTimer, 0);
 }
 // for inputs
@@ -285,7 +282,9 @@ void handleSpecialKeys(int key, int x, int y) {
   if (isWalkable(newRow, newCol)) {
     playerRow = newRow;
     playerCol = newCol;
-    checkGhostCollision();
+    checkGhostCollision(jogo);
+    checkGhostCollision(mahito);
+    checkGhostCollision(hanami);
   }
   char &tile = maze[playerRow][playerCol];
 
@@ -329,6 +328,15 @@ void init() {
   jogoTexture = loadTexture("jogo.png");
   mahitoTexture = loadTexture("mahito.png");
   hanamiTexture = loadTexture("hanami.png");
+  jogo.row = 8;
+  jogo.col = 9;
+  jogo.dir = 3;
+  mahito.row = 8;
+  mahito.col = 10;
+  mahito.dir = 2;
+  hanami.row = 8;
+  hanami.col = 11;
+  hanami.dir = 0;
 }
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
