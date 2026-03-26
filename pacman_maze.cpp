@@ -15,6 +15,9 @@ const int TILE_SIZE = 30;
 int playerRow = 10;
 int playerCol = 10;
 
+// socre
+int score = 0;
+
 // Window size
 // const int WINDOW_WIDTH = 600;
 // const int WINDOW_HEIGHT = 600;
@@ -170,11 +173,16 @@ void handleSpecialKeys(int key, int x, int y) {
   char &tile = maze[playerRow][playerCol];
 
   if (tile == '.') {
-    tile = ' '; // remove pellet
+    tile = ' ';
+    score += 10;
   }
+  if (tile == 'o') {
+    tile = ' ';
+    score += 50;
+  }
+  std::cout << "Score: " << score << std::endl;
 
   glutPostRedisplay();
-  
 }
 
 void display() {
